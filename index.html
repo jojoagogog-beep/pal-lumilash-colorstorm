@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#a3f3e4">
+<meta name="description" content="LUMILASH: COLORSTORM — surge through a rainbow monster storm, evolve outrageous color weapons and unleash spectacular prism blasts.">
+<title>LUMILASH: COLORSTORM — colorful horde survival arcade</title>
+<link rel="icon" href="icon.png" type="image/png">
+<link rel="stylesheet" href="style.css?v=1" />
+</head><body>
+<main id="app" data-scene="menu">
+<canvas id="arena" aria-label="Colorful top-down monster survival arena. Move with WASD, arrows or touch drag." role="img"></canvas>
+<div id="vignette"></div>
+<div id="topHud" aria-live="off">
+  <div class="hudGlass hudPrimary">
+    <div class="hudTitle"><div class="stageBadge" id="stageBadge">ZONE 01</div><strong id="zoneName">SUNBLOOM GARDEN</strong></div>
+    <div class="healthLine"><div class="heart" aria-hidden="true">♥</div><div class="bar hp"><div id="healthFill"></div></div><b id="healthText">100/100</b></div>
+    <div class="xpLine"><span>✦ LV <b id="levelText">1</b></span><div class="bar xp"><div id="xpFill"></div></div></div>
+  </div>
+  <div class="hudGlass hudStats">
+    <div class="statsTop"><div><small>TIME</small><strong id="clockText">02:00</strong></div><div><small>POPPED</small><strong id="killText">0000</strong></div><div><small>RUSH</small><strong id="comboText">x1</strong></div></div>
+    <div id="bossWarning" class="bossWarning" hidden><span>★ THE BIG SPARK IS HERE!</span><div class="bar boss"><div id="bossFill"></div></div></div>
+    <div id="waveBanner" class="waveBanner">POP EVERY COLOR!</div>
+  </div>
+  <div class="hudActions"><button id="muteBtn" aria-label="Toggle sound" title="Toggle sound">♫</button><button id="pauseBtn" aria-label="Pause" title="Pause">Ⅱ</button></div>
+</div>
+<div id="bottomHud">
+  <div class="modeChip"><span class="sparkle">✧</span> <span id="weaponName">PETAL BLADES</span> <span id="weaponLevel">LV.1</span></div>
+  <div class="mission"><div id="missionText">POP 20 GLIMMERS</div><div class="bar missionBar"><div id="missionFill"></div></div></div>
+  <div class="levelChip" id="levelChip">✦ 0 / 9</div>
+</div>
+<button id="burstButton" aria-label="Prism Burst special attack" aria-disabled="true">
+  <span class="burstHalo"></span><span class="burstIcon">✹</span><span class="burstCaption" id="burstCaption">PRISM<br>BURST</span><span class="burstCharge" id="burstCharge">0%</span>
+</button>
+<div id="virtualStick" hidden aria-hidden="true"><div class="stickBase"></div><div class="stickKnob"></div></div>
+<div id="toastLayer" aria-hidden="true"></div>
+<div id="gameOverlay" role="presentation">
+  <section id="menuCard" class="glassPanel menuPanel" aria-label="Main menu">
+    <div class="logoMark"><span class="logoGem">✦</span><span>AN ORIGINAL SURVIVAL ARCADE</span></div>
+    <h1><span>LUMILASH</span><small>COLORSTORM</small></h1>
+    <p class="menuSub">SWIPE THROUGH SWARMS.<br>MAKE THE WHOLE WORLD SPARKLE.</p>
+    <div class="stageArt" aria-hidden="true"><div class="miniHero">✦</div><div class="orb orb1">✺</div><div class="orb orb2">●</div><div class="orb orb3">✿</div><div class="orb orb4">✧</div><div class="comet c1"></div><div class="comet c2"></div></div>
+    <div class="zoneSelect"><span class="zoneEyebrow">YOUR NEXT ADVENTURE</span><strong id="menuZone">01 / SUNBLOOM GARDEN</strong>
+      <div class="zoneCarousel"><button data-action="prev" id="prevZone" aria-label="Previous zone">‹</button><div id="zoneCount">1 OF 5 ZONES</div><button data-action="next" id="nextZone" aria-label="Next zone">›</button></div></div>
+    <div class="menuButtons"><button class="btnPrimary" data-action="play">▶ LET THE COLORS FLY!</button>
+      <button class="btnSecondary" data-action="help">HOW TO PLAY</button></div>
+    <p class="menuStats" id="menuStats">BEST 0 · ZONES CLEARED 0/5</p>
+  </section>
+</div>
+<div id="screenTint"></div>
+<script async src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+<script defer src="crazygames-bridge.js?v=1"></script>
+<script defer src="audio.js?v=1"></script>
+<script defer src="game.js?v=1"></script>
+<script defer src="render.js?v=1"></script>
+</main>
+</body></html>
