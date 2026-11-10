@@ -1,38 +1,19 @@
-# LUMILASH: COLORSTORM
+# LUMILASH: FRONTLINE COLORSTORM (V4)
+A completely rebuilt original manual-firing bottom-rail arcade shooter. The old top-down auto-survivor V3 was abandoned in response to direct user feedback.
 
-An original bright, characterful, browser-first horde-survival arcade game.
+## The actual gameplay
+- The star cannon is always on the bottom rail; large colorful enemy formations enter from the TOP.
+- Mouse: move to aim in a vertical firing lane, hold left button to fire.
+- Touch: touch and HOLD on playfield, drag horizontally to shift the cannon and target lane; release to stop firing.
+- Keyboard: A/D or left/right arrows to move; hold Space or J to fire; Q activates PRISM CANNON when charged; P/Escape pauses.
+- **Absolutely NO auto-fire.** No shot and no KO happens without user-triggered input or an already active, previously fired projectile.
+- Direct plasma impacts, meaningful chain explosions, real individual enemy kills, armored glimmers, zigzag glimmers, volatile explosive glimmers.
+- Each breach damages the bottom base, with a tolerable leak threshold. Survive 5 increasingly crowded waves over 160 seconds, including 3 boss encounters.
+- Level-up draft of 3 weapon upgrades: extra barrels, fire rate, pierce, chain splash, damage, wider shots, special power and base repair.
+- Charge the manually triggered PRISM CANNON by actually killing enemies.
+- Original 5-part adaptive browser-synth score intensifies with attacks, crowd density, combo streaks, new waves and bosses. Dedicated laser shot effects, manual prism burst and victory/defeat stings.
 
-**Ready to test:** HTML5 Canvas + original procedural character art and game soundtrack. No imported copyrighted images, music samples, remote player tracking or dependencies. All gameplay art is procedurally illustrated in Canvas/Pillow.
+## QA and release
+QA evidence is in ../qa_v4/manual_game_qa.json. Four browser screen-size tests covered idle zero-fire/zero-KO behavior, manual pointer/touch controls, release stops firing, charged special, upgrade selection, boss, audio and JS errors. All are scripted/browser-emulated, not proof of real-player fun or device-specific FPS. An independent human playtest and official CrazyGames approval are still not verified.
 
-## Controls
-Desktop: WASD or arrows to move. The petal blades attack automatically. Press Space when the colorful PRISM BURST meter reaches 100%. P/Escape pauses; number 1/2/3 picks upgrades.
-Mobile: Touch and drag anywhere on the arena to steer with a virtual joystick; tap PRISM BURST when charged. Pause and upgrade choices are touch-enabled.
-If you stand still, the swarm will encircle you. Moving, picking upgrades and timing your burst matter.
-
-## Features
-- Five original pastel worlds (Sunbloom Garden, Citrus Daydream, Sugar Cloud Parade, Peach Sunset, Galaxy Carnival)
-- 8 enemy classes: jelly, rush, puff, tank, spitter, splitter, mini and boss
-- 10 upgrade families with multiple levels and three-choice draft
-- Bloom goals, XP crystals, orbiting sword petals, directional wide slashes, chain pops and manually triggered multi-kill super burst
-- Boss per world, 5 unlockable zones, local progress/high score, defeat/retry/results
-- Original WebAudio tracks composed as a multivoice five-world synth score with drums and custom action SFX
-- Pause/resume and CrazyGames SDK v3 start/stop events; no ad requests during Basic Launch
-- Initial download below 1MB, offline game engine (CrazyGames SDK is optional outside that platform), supports mobile/desktop and constrained 907x510 iframe
-
-## Important
-Submission status: prepared for next application, not submitted to CrazyGames. Automated browser QA is not a substitute for third-party human playtesting or formal CrazyGames QA.
-
-## Release
-Use submission/LUMILASH_COLORSTORM_CRAZYGAMES_V1.zip.
-Cover files and muted 17.5-second gameplay recordings are in submission/. Do not include qa/, tools/, or submission/frames_*/ inside the web build.
-
-## V2 Flow Rush & adaptive score (2026-11-10)
-- Continuous skillful movement charges a visible PETAL FLOW gauge. At 100%, a 4.7-second FLOW RUSH activates: faster/larger petal strikes and a light movement boost. Taking damage drains the gauge; standing idle does not charge it.
-- Five-world original adaptive WebAudio score now layers chord pads, bell countermelodies, bass fills and percussion as crowd density, kill combo, boss pressure and Flow Rush increase. Different melodic timbres and patterns per world; soundtrack continues its phrase after pauses and upgrade choices.
-- Original FLOW RUSH arrival cue, luminous aura and charging UI are built into the gameplay. Audio is generated in browser and licensed as original code (no third-party tracks).
-
-## V3 FRONTLINE RUSH — forward swarm action (2026-11-10)
-- A frontal tsunami of independently animated colorful glimmer enemies advances from the top/front of the screen continuously; normal tougher jelly/rush/tank/spitter/boss enemies remain as tactical threats.
-- Additional automatic forward-facing PRISM SWEEP scythes cut through dense rows while the original orbiting petal blades and player-triggered PRISM BURST continue. A moving player unlocks the temporary FLOW RUSH attack-speed/radius boost.
-- The lightweight micro-enemy pool limits active entities by viewport and uses simplified original rounded jelly artwork. Actual score counts individual cleared enemies; there is no misleading multiplier or fictitious kills. Total attackers may reach tens of thousands per stage, depending on playtime; total defeated depends on player performance.
-- Every 1,000 forward-swarm kills triggers an additional visible celebration. Music layers and percussion respond to the crowd, stage progress, FLOW RUSH and boss state; grouped horde SFX avoid per-enemy audio overload.
+Project uses the original PALCrazy SDK v3 lifecycle bridge; no mandatory ads or third-party dependencies apart from optional portal SDK. Game language and controls are in English for CrazyGames.
