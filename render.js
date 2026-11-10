@@ -163,6 +163,15 @@ function player(now){
  ctx.save();ctx.translate(x,y);ctx.rotate(g.rx*.025);
  shadow(0,28,35,9,.18);
  const pulse=Math.sin(now*.005)*2;
+ if(g.flowActive>0){
+  const alpha=.25+Math.sin(now*.024)*.13;
+  ctx.save();ctx.globalAlpha=alpha;
+  const grad=ctx.createRadialGradient(0,0,22,0,0,90);
+  grad.addColorStop(0,'#fff2b7');grad.addColorStop(.52,'#dfb4ff');grad.addColorStop(1,'#8eeefe00');
+  ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,90,0,TAU);ctx.fill();ctx.restore();
+  ctx.save();ctx.strokeStyle='#ffffffde';ctx.lineWidth=3;
+  ctx.setLineDash([8,12]);ctx.beginPath();ctx.arc(0,0,51+Math.sin(now*.014)*3,0,TAU);ctx.stroke();ctx.restore();
+ }
  // waist-length scarf trail and pristine white-blue lightweight armor
  ctx.save();ctx.rotate(-Math.PI/2+Math.atan2(g.ry,g.rx||.001)*.13);
  ctx.fillStyle='#b4a1f8aa';
@@ -190,6 +199,26 @@ function player(now){
  if(g.inv>0){
   ctx.globalAlpha=.65;ctx.strokeStyle='#ffe6a1';ctx.lineWidth=4;
   ctx.beginPath();ctx.arc(0,0,41+Math.sin(now*.014)*3,0,TAU);ctx.stroke();
+ }
+ ctx.restore();
+}
+// Hundreds of small original jelly glimmers are rendered as cheerful rounded
+// micro-creatures rather than pixel sprites. Culling and no per-sprite shadows.
+function drawMicroSwarm(now){
+ const W=g.viewW,H=g.viewH,colors=['#ff93bb','#a1e9e1','#c29ef7','#ffce80','#a9e5a3'];
+ ctx.save();
+ for(const m of g.microSwarm){
+  const x=m.x-g.camX,y=m.y-g.camY,r=m.r;
+  if(x< -12||x>W+12||y< -12||y>H+12)continue;
+  const bob=Math.sin(m.age*9+m.wob)*1.15;
+  ctx.fillStyle=colors[m.kind];
+  ctx.beginPath();ctx.arc(x,y+bob,r,0,TAU);ctx.fill();
+  ctx.fillStyle='#ffffffc8';ctx.beginPath();ctx.ellipse(x-r*.33,y-r*.35+bob,r*.33,r*.18,-.4,0,TAU);ctx.fill();
+  // Highlights/eyes at near distance; distant multitudes remain lightweight.
+  if(m.kind%3!==2&&r>5.5){
+   ctx.fillStyle='#5b678c';ctx.beginPath();ctx.arc(x-r*.29,y+bob,r*.13,0,TAU);
+   ctx.arc(x+r*.29,y+bob,r*.13,0,TAU);ctx.fill();
+  }
  }
  ctx.restore();
 }
@@ -302,6 +331,7 @@ function draw(now){
  background(now);
  drops(now);
  projectiles();
+ drawMicroSwarm(now);
  let visible=0;
  for(const e of g.enemies){if(enemyVisible(e,W,H)){enemyBody(e,now);visible++}}
  drawArcs();

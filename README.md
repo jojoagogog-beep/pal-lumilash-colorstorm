@@ -25,3 +25,14 @@ Submission status: prepared for next application, not submitted to CrazyGames. A
 ## Release
 Use submission/LUMILASH_COLORSTORM_CRAZYGAMES_V1.zip.
 Cover files and muted 17.5-second gameplay recordings are in submission/. Do not include qa/, tools/, or submission/frames_*/ inside the web build.
+
+## V2 Flow Rush & adaptive score (2026-11-10)
+- Continuous skillful movement charges a visible PETAL FLOW gauge. At 100%, a 4.7-second FLOW RUSH activates: faster/larger petal strikes and a light movement boost. Taking damage drains the gauge; standing idle does not charge it.
+- Five-world original adaptive WebAudio score now layers chord pads, bell countermelodies, bass fills and percussion as crowd density, kill combo, boss pressure and Flow Rush increase. Different melodic timbres and patterns per world; soundtrack continues its phrase after pauses and upgrade choices.
+- Original FLOW RUSH arrival cue, luminous aura and charging UI are built into the gameplay. Audio is generated in browser and licensed as original code (no third-party tracks).
+
+## V3 FRONTLINE RUSH — forward swarm action (2026-11-10)
+- A frontal tsunami of independently animated colorful glimmer enemies advances from the top/front of the screen continuously; normal tougher jelly/rush/tank/spitter/boss enemies remain as tactical threats.
+- Additional automatic forward-facing PRISM SWEEP scythes cut through dense rows while the original orbiting petal blades and player-triggered PRISM BURST continue. A moving player unlocks the temporary FLOW RUSH attack-speed/radius boost.
+- The lightweight micro-enemy pool limits active entities by viewport and uses simplified original rounded jelly artwork. Actual score counts individual cleared enemies; there is no misleading multiplier or fictitious kills. Total attackers may reach tens of thousands per stage, depending on playtime; total defeated depends on player performance.
+- Every 1,000 forward-swarm kills triggers an additional visible celebration. Music layers and percussion respond to the crowd, stage progress, FLOW RUSH and boss state; grouped horde SFX avoid per-enemy audio overload.

@@ -50,8 +50,8 @@ function loadProgress(){try{
 const profile=loadProgress();
 const g={
  scene:'menu',world:0,time:0,duration:102,hp:100,maxHp:100,inv:0,x:0,y:0,rx:0,ry:0,level:1,xp:0,xpNeed:9,
- kills:0,killsStage:0,combo:0,bestCombo:0,lastKill:-100,score:0,bestBurst:0,burst:0,burstActive:0,burstCounter:0,
- enemies:[],drops:[],projectiles:[],particles:[],arcs:[],rings:[],texts:[],boss:null,bossSpawned:false,
+ kills:0,killsStage:0,combo:0,bestCombo:0,lastKill:-100,score:0,bestBurst:0,burst:0,burstActive:0,burstCounter:0,flow:0,flowActive:0,flowProcs:0,
+ enemies:[],microSwarm:[],microClock:0,swarmCount:0,swarmCleared:0,swarmHits:0,frontlineWave:0,frontSlashClock:0,frontSlashCount:0,frontAngle:-Math.PI/2,drops:[],projectiles:[],particles:[],arcs:[],rings:[],texts:[],boss:null,bossSpawned:false,
  upgrades:{},upgradeOptions:[],slashClock:.18,orbitClock:0,spawnClock:0,arenaClock:0,elapsed:0,
  spawnWave:0,missionTarget:20,missionDone:false,waveKills:0,waveIndex:0,won:false,shake:0,flash:0,
  viewW:960,viewH:600,dpr:1,camX:0,camY:0,joyX:0,joyY:0,keys:new Set(),pointer:null,movement:{x:0,y:0},
@@ -62,10 +62,10 @@ let feedbackAt=0;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(profile))}catch(e){}}
 function has(id){return g.upgrades[id]||0}
 function stageName(){return WORLD[g.world].name}
-function power(){return 24*(1+.23*has('might'))}
-function slashReach(){return 137+28*has('blade')}
-function slashInterval(){return Math.max(.16,.53*Math.pow(.84,has('tempo')))}
-function moveSpeed(){return 214*(1+.13*has('speed'))}
+function power(){return 24*(1+.23*has('might'))*(g.flowActive>0?1.2:1)}
+function slashReach(){return (137+28*has('blade'))*(g.flowActive>0?1.22:1)}
+function slashInterval(){return Math.max(.14,.53*Math.pow(.84,has('tempo'))*(g.flowActive>0?.68:1))}
+function moveSpeed(){return 214*(1+.13*has('speed'))*(g.flowActive>0?1.13:1)}
 function orbitCount(){return 2+has('orbit')}
 function orbitRadius(){return 86+10*has('blade')}
 function magnetRange(){return 172+65*has('magnet')}
@@ -93,7 +93,7 @@ function ring(x,y,r,color='#fff',life=.46,line=6){
 function heroHit(amount){
  if(g.inv>0||g.scene!=='play')return;
  const mitigated=Math.max(2,Math.round(amount*(1-has('guard')*.095)));
- g.hp=Math.max(0,g.hp-mitigated);g.inv=.78;g.shake=.42;g.flash=.19;
+ g.hp=Math.max(0,g.hp-mitigated);g.inv=.78;g.shake=.42;g.flash=.19;g.flow=Math.max(0,g.flow-24);
  particle(g.x,g.y,'#ffaac2',18,1);
  sfx('hurt');uiToast('−'+mitigated+' ♥',g.viewW/2,g.viewH*.51,'bad');
  if(g.hp<=0)endRun(false);
@@ -121,6 +121,95 @@ function spawn(type=null,x=null,y=null){
   else kind='jelly';
  }
  g.enemies.push(enemy(kind,x??g.x+Math.cos(theta)*rad,y??g.y+Math.sin(theta)*rad));
+}
+// FRONTAL GLIMMER TSUNAMI: large, light-weight individual enemies advance from the TOP
+// of the arena (the player's forward view). Thousands pass through each short zone.
+// Mobile hard cap and aggregate hit accounting make five-digit kills tractable.
+function spawnFrontline(dt){
+ if(g.scene!=='play')return;
+ g.microClock-=dt;
+ if(g.microClock>0)return;
+ const intensity=clamp(g.elapsed/g.duration,0,1);
+ const pack=Math.min(82,Math.round(39+intensity*29+g.world*4));
+ const cap=g.viewW<460?850:1280;
+ for(let i=0;i<pack&&g.microSwarm.length<cap;i++){
+  const row=i%5, width=Math.max(460,g.viewW*.86);
+  const x=g.x+(Math.random()-.5)*width;
+  const y=g.y-rand(255,520)-row*13;
+  const kind=(Math.random()*5)|0;
+  g.microSwarm.push({x,y,vx:rand(-17,17),vy:rand(82,135)+intensity*50+g.world*7,
+   wob:rand(0,6.28),r:rand(4.3,7.4),kind,age:0});
+  g.swarmCount++;
+ }
+ g.microClock=clamp(.14-intensity*.025-g.world*.007,.088,.14);
+}
+function hitMicro(x,y,radius,arcAngle=-Math.PI/2,arcWidth=2.6){
+ if(!g.microSwarm.length)return 0;
+ const r2=radius*radius;
+ let killed=0,shards=0;
+ for(let i=g.microSwarm.length-1;i>=0;i--){
+  const m=g.microSwarm[i],dx=m.x-x,dy=m.y-y,dd=dx*dx+dy*dy;
+  if(dd>r2)continue;
+  const angle=Math.atan2(dy,dx);
+  const diff=Math.atan2(Math.sin(angle-arcAngle),Math.cos(angle-arcAngle));
+  if(Math.abs(diff)>arcWidth*.5&&dd>2600)continue;
+  const last=g.microSwarm.length-1;
+  g.microSwarm[i]=g.microSwarm[last];g.microSwarm.pop();
+  killed++;g.swarmCleared++;g.kills++;g.killsStage++;g.waveKills++;
+  const fast=g.elapsed-g.lastKill<2.6;
+  g.combo=fast?Math.min(9999,g.combo+1):1;g.lastKill=g.elapsed;
+  g.bestCombo=Math.max(g.bestCombo,g.combo);
+  if(g.burstActive<=0)g.burst=clamp(g.burst+.25,0,100);
+  if((++shards%18)===0)particle(m.x,m.y,['#ffc0de','#92ebf3','#fff0af','#d6bcff'][m.kind%4],3,.8);
+ }
+ if(killed){
+  g.score+=Math.round(killed*(3+comboFactor()*1.4));
+  // One burst of audio per sweep, not a voice for every tiny target.
+  sfx('horde',Math.min(2,1+killed/90));
+  if(g.waveKills>=g.missionTarget&&!g.missionDone){
+   g.missionDone=true;g.score+=500+g.waveIndex*250;
+   ring(g.x,g.y,230,'#ffe5a5',.55,9);
+   uiToast('★ FRONTLINE CLEARED!',g.viewW*.5,g.viewH*.39,'gold',true);
+  }
+  if(g.swarmCleared>0&&g.swarmCleared%1000<killed){
+   uiToast('✦ '+Math.floor(g.swarmCleared/1000)+'K FRONTLINE POPS! ✦',g.viewW*.5,g.viewH*.62,'gold',true);
+   sfx('combo');
+  }
+  g.shake=Math.max(g.shake,.085);
+ }
+ return killed;
+}
+function sweepFrontline(){
+ // Enormous, deliberately forward-facing sweeping strikes feel like mowing down rows.
+ if(g.scene!=='play')return;
+ const width=3.02+has('blade')*.08,reach=(252+has('blade')*27)*(g.flowActive>0?1.3:1);
+ const a=-Math.PI/2 + Math.sin(g.elapsed*2.5)*.16;
+ g.frontAngle=a;g.frontSlashCount++;
+ g.arcs.push({x:g.x,y:g.y,angle:a,range:reach,width,age:0,life:.24,color:g.flowActive>0?'#ffec9b':'#b4edff'});
+ if(g.arcs.length>16)g.arcs.shift();
+ const hits=hitMicro(g.x,g.y,reach,a,width);
+ if(hits>28&&hits%3===0)ring(g.x,g.y,reach*.54,'#ffe7fa',.21,4);
+}
+function updateMicroSwarm(dt){
+ spawnFrontline(dt);
+ let bumps=0;
+ for(let i=g.microSwarm.length-1;i>=0;i--){
+  const m=g.microSwarm[i];m.age+=dt;
+  m.x+=(m.vx+Math.sin(m.wob+m.age*2.7)*10)*dt;
+  m.y+=m.vy*dt;
+  const d=Math.hypot(m.x-g.x,m.y-g.y);
+  if(d<25){bumps++;m.y+=70*dt}
+  if(m.y>g.y+Math.max(260,g.viewH*.62)||Math.abs(m.x-g.x)>g.viewW*.9+280){
+   g.microSwarm[i]=g.microSwarm[g.microSwarm.length-1];g.microSwarm.pop();
+  }
+ }
+ g.swarmHits+=bumps;
+ if(bumps>16&&g.inv<=0)heroHit(3+Math.min(7,Math.floor(bumps/20)));
+ g.frontSlashClock-=dt;
+ if(g.frontSlashClock<=0){
+  sweepFrontline();
+  g.frontSlashClock+=Math.max(.115,.235*Math.pow(.91,has('tempo'))*(g.flowActive>0?.65:1));
+ }
 }
 function initializeCrowd(n=35){
  for(let i=0;i<n;i++){
@@ -203,7 +292,7 @@ function attack(){
   if(d<best){best=d;target=e}
  }
  const radius=slashReach(),direction=target?Math.atan2(target.y-g.y,target.x-g.x):g.orbitClock;
- const arcWidth=2.25+has('blade')*.13;
+ const arcWidth=2.25+has('blade')*.13+(g.flowActive>0?.92:0);
  const strength=power();
  g.arcs.push({x:g.x,y:g.y,angle:direction,range:radius,width:arcWidth,
    age:0,life:.28,color:g.combo>20?'#ffd374':'#ffffff'});
@@ -218,7 +307,7 @@ function attack(){
    harm(e,strength);hits++;
   }
  }
- if(hits){g.shake=Math.max(g.shake,.08);sfx('slash',1+Math.min(hits/15,1))}
+ if(hits){g.shake=Math.max(g.shake,g.flowActive>0?.12:.08);sfx('slash',1+Math.min(hits/15,1))}
 }
 function orbitDamage(dt){
  const count=orbitCount(),r=orbitRadius();
@@ -252,6 +341,7 @@ function prismBurst(){
    if(!before&&e.dead)killed++;
   }
  }
+ killed+=hitMicro(g.x,g.y,radius,0,6.28);
  g.bestBurst=Math.max(g.bestBurst,killed);
  if(killed>=10)uiToast(''+killed+' MONSTERS POPPED!',g.viewW*.5,g.viewH*.67,'good',true);
  g.score+=killed*25;sfx('burst');
@@ -345,15 +435,15 @@ function startZone(world=profile.selected){
  profile.selected=g.world;save();
  g.scene='play';g.x=0;g.y=0;g.rx=0;g.ry=0;g.hp=100;g.maxHp=100;g.inv=0;
  g.duration=WORLD[g.world].duration;g.time=g.duration;g.elapsed=0;g.gameSeconds=0;g.lastKill=-100;
- g.kills=0;g.killsStage=0;g.score=0;g.combo=0;g.bestCombo=0;g.bestBurst=0;g.burst=0;
+ g.kills=0;g.killsStage=0;g.score=0;g.combo=0;g.bestCombo=0;g.bestBurst=0;g.burst=0;g.flow=0;g.flowActive=0;g.flowProcs=0;
  g.level=1;g.xp=0;g.xpNeed=9;g.upgrades={};g.slashClock=.15;g.orbitClock=0;
  g.spawnClock=.1;g.arenaClock=0;g.waveIndex=0;g.waveKills=0;g.missionTarget=stepMission();
  g.missionDone=false;g.boss=null;g.bossSpawned=false;g.burstActive=0;g.shake=0;g.flash=0;
- g.enemies=[];g.drops=[];g.projectiles=[];g.particles=[];g.rings=[];g.arcs=[];g.texts=[];
+ g.enemies=[];g.microSwarm=[];g.microClock=0;g.swarmCount=0;g.swarmCleared=0;g.swarmHits=0;g.frontlineWave=0;g.frontSlashClock=.09;g.frontSlashCount=0;g.drops=[];g.projectiles=[];g.particles=[];g.rings=[];g.arcs=[];g.texts=[];
  g.won=false;g.pointer=null;g.movement={x:0,y:0};g.fps=60;g.frameAvg=1/60;
  initializeCrowd(26+g.world*7);
  overlay.classList.add('hidden');app.dataset.scene='play';
- Audio?.start(g.world);window.PALCrazy?.gameStart();ui();
+ Audio?.start(g.world,true);window.PALCrazy?.gameStart();ui();
  uiToast('✦ LET THE COLORS FLY!',g.viewW/2,g.viewH*.34,'good',true);
  return true;
 }
@@ -491,6 +581,22 @@ function movement(dt){
   g.rx=x/Math.max(1,mag);g.ry=y/Math.max(1,mag);
  }
 }
+function updateFlow(dt){
+ // Moving tactically earns a timed power spike; idle auto-play never earns it.
+ if(g.flowActive>0){g.flowActive=Math.max(0,g.flowActive-dt);return}
+ const moving=Math.hypot(g.movement.x,g.movement.y)>.3||
+ ['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].some(k=>g.keys.has(k));
+ if(!moving){g.flow=Math.max(0,g.flow-dt*3.5);return}
+ g.flow=Math.min(100,g.flow+dt*(11+Math.min(9,g.combo*.11)));
+ if(g.flow>=100){
+  g.flow=0;g.flowActive=4.7;g.flowProcs++;
+  g.shake=Math.max(g.shake,.28);
+  ring(g.x,g.y,225,'#d8a7ff',.6,10);
+  particle(g.x,g.y,'#f6dcff',32,1.35);
+  uiToast('✦ FLOW RUSH! ✦',g.viewW*.5,g.viewH*.28,'gold',true);
+  sfx('flow');
+ }
+}
 function updateEffects(dt){
  for(let i=g.particles.length-1;i>=0;i--){
   const p=g.particles[i];p.age+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.18,dt);p.vy*=Math.pow(.26,dt);
@@ -506,8 +612,9 @@ function tick(dt){
  if(g.scene!=='play')return;
  dt=clamp(dt,0,.055);
  g.elapsed+=dt;g.time=Math.max(0,g.duration-g.elapsed);g.gameSeconds+=dt;
- movement(dt);
+ movement(dt);updateFlow(dt);
  g.slashClock-=dt;if(g.slashClock<=0){attack();g.slashClock+=slashInterval()}
+ updateMicroSwarm(dt);
  orbitDamage(dt);
  g.spawnClock-=dt;
  if(g.spawnClock<=0){
@@ -516,6 +623,10 @@ function tick(dt){
   g.spawnClock=clamp(.73-intensity*.28-g.world*.035,.29,.75);
  }
  updateBoss(dt);updateEnemies(dt);updateDrops(dt);updateEffects(dt);
+ if((g.frameCount++ % 12)===0)Audio?.setActivity?.({
+  combo:g.combo,enemies:g.enemies.length+g.microSwarm.length,boss:!!g.boss,
+  progress:g.elapsed/g.duration,flow:g.flowActive>0,burstReady:g.burst>=100
+ });
  g.arenaClock+=dt;
  if(g.arenaClock>=4.6){g.arenaClock-=4.6;g.waveIndex++;
    if(g.missionDone){g.waveKills=0;g.missionDone=false;g.missionTarget=stepMission()}
@@ -534,11 +645,12 @@ function ui(force=false){
  $('levelText').textContent=g.level;
  $('clockText').textContent=String(Math.floor(g.time/60)).padStart(2,'0')+':'+String(Math.ceil(g.time)%60).padStart(2,'0');
  $('killText').textContent=String(g.kills).padStart(4,'0');
- $('comboText').textContent='x'+(1+Math.floor(g.combo/12)*.5).toFixed(1);
+ $('comboText').textContent='x'+Math.min(99,1+Math.floor(g.combo/12)*.5).toFixed(1);
  $('bossWarning').hidden=!g.boss;
  if(g.boss)$('bossFill').style.width=clamp(g.boss.hp/g.boss.maxHp*100,0,100)+'%';
- $('waveBanner').textContent=g.boss?'✦ BEAT THE BIG SPARK!':g.elapsed<7?(window.matchMedia('(pointer:coarse)').matches?'✦ DRAG ANYWHERE TO MOVE — AUTO ATTACK!':'✦ WASD / ARROWS TO MOVE — AUTO ATTACK!'):'✦ '+(['BRIGHTEN THE SKY!','JELLY RUSH!','CANDY COLORSTORM!'][g.waveIndex%3]);
- $('weaponName').textContent='PETAL BLADES';$('weaponLevel').textContent='LV.'+(1+has('blade')+has('orbit'));
+ $('waveBanner').textContent=g.boss?'✦ BEAT THE BIG SPARK!':g.flowActive>0?'✦ FLOW RUSH — EXTRA FAST PETAL SLASHES!':g.elapsed<7?(window.matchMedia('(pointer:coarse)').matches?'✦ DRAG ANYWHERE TO MOVE — AUTO ATTACK!':'✦ WASD / ARROWS TO MOVE — AUTO ATTACK!'):'✦ FRONTLINE SWARM — CUT THROUGH THE RAINBOW!';
+ const flowChip=document.querySelector('.modeChip');flowChip.classList.toggle('flowReady',g.flowActive>0);flowChip.style.setProperty('--flow',g.flowActive>0?'100%':Math.floor(g.flow)+'%');
+ $('weaponName').textContent=g.flowActive>0?'✦ FLOW RUSH!':'PETAL FLOW '+Math.floor(g.flow)+'%';$('weaponLevel').textContent='LV.'+(1+has('blade')+has('orbit'));
  $('missionText').textContent=g.missionDone?'★ BLOOM CHALLENGE COMPLETE':'POP '+g.missionTarget+' GLIMMERS';
  $('missionFill').style.width=clamp(g.waveKills/g.missionTarget*100,0,100)+'%';
  $('levelChip').textContent='✦ '+g.xp+' / '+g.xpNeed;
@@ -570,10 +682,10 @@ function frame(now){
 if(new URLSearchParams(location.search).get('qa')==='1'){
  window.LumiQA={
   snapshot:()=>({scene:g.scene,world:g.world,player:{x:g.x,y:g.y},time:g.time,hp:g.hp,maxHp:g.maxHp,kills:g.kills,score:g.score,
-   combo:g.combo,bestCombo:g.bestCombo,burst:g.burst,bestBurst:g.bestBurst,enemyCount:g.enemies.length,
+   combo:g.combo,bestCombo:g.bestCombo,burst:g.burst,bestBurst:g.bestBurst,enemyCount:g.enemies.length,microCount:g.microSwarm.length,microSpawned:g.swarmCount,microCleared:g.swarmCleared,frontSlashCount:g.frontSlashCount,
    drops:g.drops.length,particles:g.particles.length,arcs:g.arcs.length,level:g.level,xp:g.xp,
    unlocked:profile.unlocked,bossAlive:!!g.boss,bossSpawned:g.bossSpawned,upgradeOptions:g.upgradeOptions.map(x=>x.id),
-   fps:g.fps,frameCount:g.frameCount,progress:core.readProgress()}),
+   fps:g.fps,frameCount:g.frameCount,flow:Math.round(g.flow),flowActive:g.flowActive,flowProcs:g.flowProcs,progress:core.readProgress()}),
   start:(n=0)=>{profile.unlocked=Math.max(profile.unlocked,n+1);startZone(n)},
   spawn:(count=30,type='jelly',radius=150)=>{
    for(let i=0;i<count;i++){const a=i*Math.PI*2/count,r=radius+(i%5)*7;spawn(type,g.x+Math.cos(a)*r,g.y+Math.sin(a)*r)}},
@@ -582,7 +694,7 @@ if(new URLSearchParams(location.search).get('qa')==='1'){
   burst:()=>prismBurst(),
   upgrade:()=>levelUp(),
   choose:(i)=>chooseUpgrade(i),
-  killAll:()=>{for(const e of [...g.enemies])harm(e,9999,true);ui(true)},
+  killAll:()=>{for(const e of [...g.enemies])harm(e,9999,true);hitMicro(g.x,g.y,99999,0,6.29);ui(true)},
   spawnBoss:()=>popBoss(),
   win:()=>{g.elapsed=g.duration;g.bossSpawned=true;g.boss=null;endRun(true)},
   lose:()=>endRun(false),
@@ -591,6 +703,12 @@ if(new URLSearchParams(location.search).get('qa')==='1'){
   setWorld:(i)=>{profile.unlocked=5;startZone(i)},
   getEnemy:(i=0)=>g.enemies[i]?{...g.enemies[i]}:null,
   move:(x,y)=>{g.movement.x=x;g.movement.y=y},
+  spawnFrontline:(count=350)=>{
+   const k=Math.max(1,Math.min(count,1000));
+   for(let i=0;i<k;i++)g.microSwarm.push({x:g.x+rand(-240,240),y:g.y-rand(40,315),vx:0,vy:rand(65,110),wob:rand(0,6.28),r:6,kind:i%5,age:0});
+   g.swarmCount+=k;
+  },
+  frontlineHit:()=>hitMicro(g.x,g.y,380,-Math.PI/2,2.95),
   verify:()=>({renderInstalled:!!window.LumiRender,haveAudio:!!Audio,version:'1.0-colorstorm'})
  };
 }

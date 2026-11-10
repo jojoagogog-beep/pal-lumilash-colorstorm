@@ -12,6 +12,15 @@ const MOTIFS=[
 ],ROOTS=[60,62,65,57,64],BPM=[118,126,132,122,144];
 let ctx=null,mix=null,volume=null,comp=null,noise=null,playing=false,muted=false;
 let world=0,step=0,next=0,timer=0,lastTap=-100,lastKill=-100;
+let energy=.22,targetEnergy=.22,bossMode=false,flowMode=false,burstReady=false,progress=0;
+let section=0,lastAccent=-100,lastHorde=-100;
+const COLORS=[
+ {lead:'triangle',pad:'sine',counter:12,hat:1.0},
+ {lead:'sine',pad:'triangle',counter:19,hat:1.22},
+ {lead:'triangle',pad:'sine',counter:7,hat:.94},
+ {lead:'sine',pad:'triangle',counter:12,hat:1.12},
+ {lead:'triangle',pad:'sine',counter:24,hat:1.35}
+];
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 function init(){
  if(ctx)return ctx;
@@ -41,6 +50,15 @@ function osc(freq,when,dur=0.2,amp=.1,wave='sine',dest=mix,detune=0){
  o.connect(g);g.connect(dest);o.start(when);o.stop(when+Math.max(.05,dur)+.04);
 }
 const hz=n=>440*Math.pow(2,(n-69)/12);
+function softBell(n,when,amp=.045){
+ const f=hz(n);osc(f,when,.34,amp,'sine');
+ osc(f*2.01,when,.20,amp*.27,'sine',mix,3);
+ osc(f*3.97,when,.11,amp*.1,'sine');
+}
+function stringPad(n,when,dur=1.0,amp=.022){
+ osc(hz(n),when,dur,amp,COLORS[world].pad,mix,-4);
+ osc(hz(n),when,dur,amp*.7,'triangle',mix,4);
+}
 function plume(n,when,vol=.15){
  const f=hz(n);osc(f,when,.27,vol,'triangle');osc(f*2,when,.13,vol*.21,'sine');
  osc(f*.5,when,.21,vol*.15,'sine');
@@ -66,18 +84,41 @@ function hiss(when,duration,vol,filterHz,kind='highpass'){
 function snare(when){hiss(when,.12,.065,1600);osc(176,when,.07,.029,'triangle')}
 function tickNote(){
  const t=next,seq=step%16,beat=step%8,bar=Math.floor(step/8);
+ energy+=Math.max(-.045,Math.min(.045,targetEnergy-energy));
  const root=ROOTS[world]+[-2,0,2,0,3][world];
  const motif=MOTIFS[world],degree=motif[seq];
  const chord=CHORDS[Math.floor(bar/2)%CHORDS.length];
- if(beat===0||beat===4)kick(t,beat===0?.19:.145);
+ const active=energy>.44,big=energy>.7||bossMode,peak=energy>.86;
+ const tone=COLORS[world],phase=Math.floor(step/64)%4;
+ if(beat===0||beat===4)kick(t,(beat===0?.16:.125)*(1+energy*.55));
+ if(big&&beat===0)kick(t+.125,.13);
  if(beat===2||beat===6)snare(t);
- hiss(t,.041,beat%2===0?.032:.018,7100);
- if(beat===3||beat===7)hiss(t,.08,.022,4500);
+ if(beat%2===0||active)hiss(t,.034,(beat%2===0?.019:.011)*(1+energy*.35),7100*tone.hat);
+ if(big&&(beat===3||beat===7))hiss(t,.07,.026,5400);
+ if(energy>.65&&beat%4===1)hiss(t,.027,.014,8800);
  if(beat%2===0)bass(root-24+chord,t);
- if(degree>=0)plume(root+degree+(seq>7?12:0),t,(world===4?.095:.085));
- if(beat===0){
-  for(const k of [0,4,7])osc(hz(root-12+chord+k),t,1.58,.013,'sine');
+ if(big&&beat===6)bass(root-12+chord,t+.04);
+ if(degree>=0) {
+  const note=root+degree+(seq>7?12:0);
+  if(phase===1||world===1)softBell(note,t,.05+energy*.025);
+  else plume(note,t,(world===4?.088:.075)*(1+energy*.2));
  }
+ // Harmonically stable backing swells change with section and world.
+ if(beat===0){
+  for(const k of [0,4,7])stringPad(root-12+chord+k,t,1.72,.015+energy*.008);
+  if(phase===2||world===3)softBell(root+chord+19,t+.09,.032);
+ }
+ // Alternate melodic call-and-response, sparse early and bright at high intensity.
+ if((active||phase===3)&&beat===5){
+  const response=root+chord+tone.counter+(bar%2?2:0);
+  softBell(response,t+.065,big?.055:.032);
+ }
+ if(peak&&beat===7){softBell(root+chord+24,t+.08,.047)}
+ if(bossMode&&beat===0){
+  osc(hz(root-24+chord),t,.76,.068,'sawtooth');
+  hiss(t,.11,.045,900,'bandpass');
+ }
+ if(flowMode&&beat%4===2)softBell(root+chord+24,t+.04,.056);
  step++;next+=60/BPM[world]/2;
 }
 function schedule(){
@@ -86,7 +127,18 @@ function schedule(){
  while(next<ctx.currentTime+.19&&loops<12){tickNote();loops++}
  if(loops===12&&next<ctx.currentTime)next=ctx.currentTime+.04;
 }
-function start(w=0){if(!unlock())return;world=clamp(w|0,0,4);step=0;next=ctx.currentTime+.06;playing=true;clearInterval(timer);timer=setInterval(schedule,90);schedule()}
+function setActivity(o={}){
+ const opponents=clamp((o.enemies||0)/105,0,1);
+ targetEnergy=clamp(.2+opponents*.36+Math.min(.24,(o.combo||0)/120)+clamp(o.progress||0,0,1)*.15+(o.flow?.12:0)+(o.boss?.34:0),.2,1);
+ bossMode=!!o.boss;flowMode=!!o.flow;burstReady=!!o.burstReady;progress=clamp(o.progress||0,0,1);
+}
+function start(w=0,restart=false){
+ if(!unlock())return;
+ const nw=clamp(w|0,0,4);
+ if(restart||nw!==world){step=0;targetEnergy=.22;energy=.22;bossMode=false;flowMode=false}
+ world=nw;next=ctx.currentTime+.06;playing=true;
+ clearInterval(timer);timer=setInterval(schedule,90);schedule();
+}
 function stop(){playing=false;clearInterval(timer);timer=0}
 function setMuted(on){muted=!!on;if(!ctx)return;volume.gain.setTargetAtTime(muted?0:.29,ctx.currentTime,.02)}
 function sfx(kind,power=1){
@@ -105,6 +157,13 @@ function sfx(kind,power=1){
  }else if(kind==='burst'){
   hiss(t,.55,.29,380,'bandpass');
   for(let k=0;k<8;k++){osc(hz(60+k*2),t+k*.043,.50-k*.029,.12,'sawtooth');osc(hz(72+k),t+k*.033,.2,.075,'triangle')}
+ }else if(kind==='horde'){
+  if(t-lastHorde<.092)return;lastHorde=t;
+  hiss(t,.08,.048*clamp(power,.6,1.8),1400,'bandpass');
+  osc(270+power*43,t,.09,.032,'triangle');
+ }else if(kind==='flow'){
+  [67,72,76,79,84].forEach((n,i)=>softBell(n,t+i*.066,.15));
+  hiss(t,.22,.075,2600,'highpass');
  }else if(kind==='hurt'){osc(144,t,.20,.15,'square');osc(96,t+.05,.16,.055,'sawtooth')}
  else if(kind==='pickup'){osc(970,t,.10,.03,'sine')}
  else if(kind==='upgrade'){
@@ -115,5 +174,5 @@ function sfx(kind,power=1){
   [60,64,67,72,76,79,84].forEach((n,i)=>plume(n,t+i*.11,.20));
  }else if(kind==='click')osc(640,t,.06,.025,'sine');
 }
-window.LumiAudio={start,stop,sfx,unlock,setMuted,isMuted:()=>muted,isPlaying:()=>playing,status:()=>({playing,muted,context:ctx?.state||'absent',world,step})};
+window.LumiAudio={start,stop,sfx,unlock,setMuted,setActivity,isMuted:()=>muted,isPlaying:()=>playing,status:()=>({playing,muted,context:ctx?.state||'absent',world,step,energy:Number(energy.toFixed(2)),targetEnergy:Number(targetEnergy.toFixed(2)),bossMode,flowMode,progress})};
 })();
