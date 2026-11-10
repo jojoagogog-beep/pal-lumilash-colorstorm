@@ -2,3 +2,38 @@
 @media(max-width:650px){#hud{left:5px;right:5px;gap:4px;top:max(5px,env(safe-area-inset-top))}.hudLeft{width:105px;max-width:28%;padding:7px 6px}.eyebrow{font-size:7px;letter-spacing:0}.base{font-size:8px;margin-top:5px}.base strong{font-size:12px}.hudCenter{padding:5px}.metrics{gap:3px}.metrics small{font-size:7px}.metrics b{font-size:clamp(12px,3.3vw,19px)}#status{font-size:7px}.hudButtons{padding:2px;gap:0}.hudButtons button{width:27px;height:31px;font-size:15px}#bossHUD{top:73px}#bottomHUD{bottom:max(7px,env(safe-area-inset-bottom));left:6px;right:6px;gap:5px}#ammoLabel,#energy{padding:7px;font-size:8px;border-radius:8px}#energy{margin-right:80px}#energy .progress{width:40px}#superBtn{right:11px;bottom:69px;width:77px;height:77px}#superBtn>b{font-size:18px}#superBtn span{font-size:7px}#superBtn small{font-size:7px}.panel{padding:16px 12px}.upgradeGrid{gap:5px}.upgrade{min-height:149px;padding:9px 4px}.upgrade i{font-size:27px}.upgrade b{font-size:10px}.upgrade small{font-size:9px}.panel p{font-size:11px}.resultGrid{gap:17px}}
 @media(max-width:355px){.hudLeft{max-width:29%}.hudButtons button{width:23px}#status{display:none}#energy{display:none}#ammoLabel{max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* V5: warm classic-arcade flight HUD, not a cosmic neon theme. */
+:root{--cream:#fff6d5;--cyan:#d0f5e7;--pink:#eead82;--gold:#ffd36f}
+body{background:#6b997a}
+.hudLeft,.hudCenter,.hudButtons,#ammoLabel,#energy{
+ background:linear-gradient(140deg,#2c513ddd,#304c50ed);
+ border:1px solid #eedfaeaa;
+ box-shadow:0 5px 18px #1a3d3690,inset 0 1px 1px #ffffff52;
+}
+#hud{top:max(6px,env(safe-area-inset-top))}
+.eyebrow,.metrics small,#status,.base{color:#fff1c3}
+.eyebrow b,.metrics div:nth-child(2) b{color:#ffd487}
+.metrics div:nth-child(3) b{color:#f0ee9a}
+#ammoLabel{color:#fff4d4;border-radius:12px;pointer-events:auto;cursor:pointer;text-align:left;min-height:37px;white-space:nowrap}
+#ammoLabel b{color:#ffd56c}
+#ammoLabel:active{background:#4d7262}
+.progress{background:#162f2e77}
+.progress span{background:linear-gradient(90deg,#fee19b,#b9f3ae)}
+#superBtn{background:radial-gradient(circle at 34% 20%,#f6e7a3,#d79a66 50%,#93653d);
+ border-color:#fff2c3;box-shadow:0 4px 18px #6c472888,inset 0 1px 10px #fff8}
+#superFill{background:linear-gradient(90deg,#7edeb2,#ffe68a)}
+#overlay{background:#1c3b2da6}
+.panel{background:linear-gradient(145deg,#284e43f2,#496a53f4 60%,#715b47f1);
+ border-color:#ffeac1e0;box-shadow:0 15px 45px #152a25bd}
+.panel:before{color:#ffe4a052}
+.panel h1{color:#fff6d8;text-shadow:0 4px 15px #384e306f}
+.panel h1 span,.panel h2{color:#ffe09a}
+.panel p,.upgrade small{color:#f5f0d9}
+.eyelabel,.instruction{color:#fff0ba!important}
+.featureStrip span{background:#f2e9c52b;color:#fdf0c4}
+.btnMain{background:linear-gradient(110deg,#ffe8aa,#ecce81,#e7a76d);color:#4b4935;box-shadow:0 8px 18px #423c1c6c}
+.btnAlt{background:#f6e8ca26;color:#fff6d8}
+.upgrade{background:linear-gradient(145deg,#496b52,#617047);border-color:#fff2bf65}
+#bottomHUD{z-index:5}
+@media(max-width:650px){#ammoLabel{font-size:8px;min-width:125px}}

@@ -2,27 +2,27 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#142850">
+<meta name="theme-color" content="#789b75">
 <meta name="description" content="LUMILASH: FRONTLINE COLORSTORM. Aim and fire from the bottom rail to stop overwhelming descending rainbow enemy formations. No idle kills.">
-<title>LUMILASH: FRONTLINE COLORSTORM</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2717%27 fill=%27%231b2a66%27/%3E%3Cpath d=%27M32 8L49 51L32 40L15 51Z%27 fill=%27%2378e8f7%27 stroke=%27white%27 stroke-width=%273%27/%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css?v=4">
+<title>LUMILASH: CLASSIC SKY RAID — Arcade Fighter</title>
+<link rel="icon" href="icon.png" type="image/png">
+<link rel="stylesheet" href="style.css?v=5">
 </head><body>
 <main id="app" data-scene="menu">
 <canvas id="arena" aria-label="Manual aim-and-fire vertical arcade shooter. Hold pointer or Space to shoot." role="img"></canvas>
 <div id="hud">
- <div class="hudLeft"><div class="eyebrow">LUMILASH <b>FRONTLINE</b></div><div class="base">BASE <strong id="baseHP">100</strong><div class="progress"><span id="baseFill"></span></div></div></div>
+ <div class="hudLeft"><div class="eyebrow">LUMILASH <b>SKY RAID</b></div><div class="base">BASE <strong id="baseHP">100</strong><div class="progress"><span id="baseFill"></span></div></div></div>
  <div class="hudCenter"><div class="metrics"><div><small>WAVE</small><b id="wave">01</b></div><div><small>KO</small><b id="kills">00000</b></div><div><small>COMBO</small><b id="combo">x1.0</b></div><div><small>TIME</small><b id="clock">02:30</b></div></div><div id="status">HOLD TO FIRE • AIM AT THE SWARM</div></div>
- <div class="hudButtons"><button id="muteBtn" aria-label="Mute music">♫</button><button id="pauseBtn" aria-label="Pause">Ⅱ</button></div>
+ <div class="hudButtons"><button id="muteBtn" aria-label="Mute music">♫</button><button id="pauseBtn" aria-label="Hold to pause" title="Hold to pause">Ⅱ</button></div>
 </div>
 <div id="bossHUD" hidden><span id="bossLabel">BOSS INCOMING</span><div class="progress"><span id="bossFill"></span></div></div>
-<div id="bottomHUD"><div id="ammoLabel">PRISM BLASTER <b id="weaponLevel">LV 1</b></div><div id="energy"><span>SUPER</span><div class="progress"><span id="superFill"></span></div><b id="superText">0%</b></div></div>
-<button id="superBtn" aria-label="Activate manually charged prism cannon" aria-disabled="true"><b>✦</b><span>PRISM<br>CANNON</span><small id="superReady">CHARGE</small></button>
+<div id="bottomHUD"><button id="ammoLabel" aria-label="Switch weapon fire mode">FIRE MODE <b id="weaponLevel">LV 1 · WIDE</b></button><div id="energy"><span>SUPER</span><div class="progress"><span id="superFill"></span></div><b id="superText">0%</b></div></div>
+<button id="superBtn" aria-label="Activate manually charged prism cannon" aria-disabled="true"><b>✦</b><span>AIR<br>RAID</span><small id="superReady">CHARGE</small></button>
 <div id="overlay" aria-live="polite"></div>
 <div id="flashLayer"></div>
 <script async src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
-<script defer src="crazygames-bridge.js?v=4"></script>
-<script defer src="audio.js?v=4"></script>
-<script defer src="game.js?v=4"></script>
+<script defer src="crazygames-bridge.js?v=5"></script>
+<script defer src="audio.js?v=5"></script>
+<script defer src="game.js?v=5"></script>
 </main>
 </body></html>

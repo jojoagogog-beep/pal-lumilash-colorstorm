@@ -148,6 +148,12 @@ function sfx(kind,power=1){
   if(t-lastKill<.028)return;lastKill=t;
   const freq=[392,440,523,587,659][Math.floor(Math.random()*5)]*clamp(power,.8,1.4);
   osc(freq,t,.085,.046,'sine');osc(freq*1.49,t+.023,.075,.023,'triangle');
+ }else if(kind==='cannon'){
+  // Original punchy vintage arcade projectile sound; no external samples.
+  if(t-lastTap<.063)return;lastTap=t;
+  osc(360,t,.070,.070,'triangle');
+  osc(710,t,.045,.023,'square');
+  hiss(t,.050,.021,2350,'highpass');
  }else if(kind==='slash'){
   if(t-lastTap<.055)return;lastTap=t;
   hiss(t,.15,.085,1100,'bandpass');
