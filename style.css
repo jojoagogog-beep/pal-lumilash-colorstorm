@@ -53,3 +53,6 @@ body{background:#6b997a}
  #bottomHUD{right:8px}
  #energy .progress{min-width:42px}
 }
+
+/* V7: fixed single straight weapon, no clickable mode control */
+#ammoLabel{cursor:default;pointer-events:none}

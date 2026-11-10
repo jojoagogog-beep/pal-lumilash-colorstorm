@@ -1,4 +1,4 @@
-/* LUMILASH SKY RAID v6 — optimized nonstop arcade aerial shooter.
+/* LUMILASH SKY RAID v7 — true tenfold enemy population / single straight cannon.
  * The cannon NEVER shoots without pointer-down or a held fire key.
  * A visible enemy is counted as defeated ONLY when a player-fired shot or manually
  * activated special hits it. This is a ground-up remake of the prior auto-survivor.
@@ -11,14 +11,13 @@ const COLORS=['#3b253e','#542633','#292a42','#394632','#502c3e','#313d42'];
 const ACCENTS=['#fc4a5f','#ff7451','#d461ef','#a9e04e','#ed5f8e','#58d9c7'];
 const WAVES=['COASTLINE PATROL','FOREST SQUADRON','RIVER CROSSING','MOUNTAIN ASSAULT','FINAL SKY RAID'];
 const UPGRADES=[
- {id:'fan',icon:'✺',name:'TRIPLE BARRAGE',text:'Extra parallel cannons. Every shot controls a larger lane.',max:3},
- {id:'rate',icon:'⚡',name:'RAPID TRIGGER',text:'Fire significantly faster while holding.',max:5},
- {id:'pierce',icon:'➤',name:'PIERCING RAIL',text:'Plasma shots tear through more enemies.',max:5},
- {id:'blast',icon:'✹',name:'CHAIN EXPLOSION',text:'Each impact detonates a wider cluster.',max:5},
- {id:'power',icon:'◆',name:'HEAVY PLASMA',text:'Higher damage and better armored-enemy removal.',max:5},
- {id:'beam',icon:'✦',name:'RAINBOW SUPERNOVA',text:'More charge per kill and a wider special cannon.',max:4},
- {id:'wall',icon:'♥',name:'REPAIR DRONE',text:'Restore base health and reinforce against leaks.',max:3},
- {id:'focus',icon:'◎',name:'PRECISION LENS',text:'Wider bullets and tighter piercing volleys.',max:4}
+ {id:'power',icon:'◆',name:'CANNON POWER',text:'More impact damage on the same straight line.',max:8},
+ {id:'rate',icon:'⚡',name:'RAPID TRIGGER',text:'Fire one straight projectile faster.',max:8},
+ {id:'pierce',icon:'➤',name:'PENETRATION',text:'The single shot pierces deeper into formations.',max:8},
+ {id:'blast',icon:'✹',name:'CHAIN REACTION',text:'Shots trigger wider group detonations.',max:7},
+ {id:'focus',icon:'◎',name:'WIDER SHOT',text:'Thicken the same straight firing lane.',max:6},
+ {id:'beam',icon:'✦',name:'AIR RAID',text:'Charge the optional manual special faster.',max:4},
+ {id:'wall',icon:'♥',name:'REPAIR',text:'Recover the airfield.',max:4}
 ];
 const KEY='lumilash-frontline-v4-progress';
 function readSave(){try{const d=JSON.parse(localStorage.getItem(KEY)||'null')||{};return {best:d.best||0,maxKO:d.maxKO||0,runs:d.runs||0,muted:!!d.muted}}catch(e){return{best:0,maxKO:0,runs:0,muted:false}}}
@@ -28,7 +27,7 @@ const g={
  scene:'menu',W:960,H:600,dpr:1,shipX:480,shipY:520,aimX:480,aimY:160,keys:new Set(),pointer:null,fireKey:false,fireDelay:0,
  elapsed:0,duration:210,wave:1,base:100,baseMax:100,fireMode:0,kills:0,score:0,combo:0,bestCombo:0,lastKO:-99,charge:0,specials:0,shotCount:0,hitCount:0,
  level:1,nextUpgrade:450,upgrades:{},upgradeChoices:[],enemyPool:[],bullets:[],particles:[],rings:[],texts:[],beams:[],boss:null,bossesDefeated:0,
- spawnTimer:0,spawned:0,leaked:0,spawnSeed:0,formation:0,shake:0,flash:0,freeze:0,superFlash:0,now:0,fps:60,frameDt:1/60,frameCount:0,musicTime:0,renderedEnemies:0,sceneReason:''
+ spawnTimer:0,spawned:0,leaked:0,spawnSeed:0,formation:0,firstSwarm:true,totalFront:0,shake:0,flash:0,freeze:0,superFlash:0,now:0,fps:60,frameDt:1/60,frameCount:0,musicTime:0,renderedEnemies:0,sceneReason:''
 };
 function snd(kind,v=1){Audio?.sfx(kind,v)}
 function owned(up){return g.upgrades[up]||0}
@@ -40,18 +39,18 @@ function menu(){
  g.scene='menu';$('app').dataset.scene='menu';window.PALCrazy?.gameStop();Audio?.stop();
  panel('<div class="eyelabel">CLASSIC VERTICAL ARCADE SHOOTER</div><h1>LUMILASH<span>CLASSIC SKY RAID</span></h1>'+
  '<p>FLY YOUR FIGHTER OVER GREEN VALLEYS AND RIVERS.<br><b>HOLD TO FIRE. DODGE THE RAID. DEFEND THE AIRFIELD.</b></p>'+
- '<div class="featureStrip"><span>HOLD TO SHOOT</span><span>3 FIRE MODES</span><span>AUTO POWER-UPS</span><span>BIG BOSSES</span></div>'+
- '<p class="instruction">MOUSE / TOUCH: hold and drag left or right to shoot & steer<br>KEYBOARD: A/D to move · SPACE to shoot · 1/2/3 modes · Q super</p>'+
+ '<div class="featureStrip"><span>HOLD TO SHOOT</span><span>STRAIGHT CANNON</span><span>10X SWARMS</span><span>AUTO POWER-UPS</span></div>'+
+ '<p class="instruction">MOUSE / TOUCH: hold and drag left or right to shoot & steer<br>KEYBOARD: A/D to move · SPACE to shoot · Q super</p>'+
  '<div class="panelFooter"><button class="btnMain" data-action="start">▶ START SHOOTING</button><button class="btnAlt" data-action="help">CONTROLS</button></div>'+
  '<p class="instruction">PERSONAL BEST '+save.best.toLocaleString()+' · MOST KOs '+save.maxKO.toLocaleString()+'</p>');
  hud(true);
 }
 function help(){panel('<div class="eyelabel">HOW TO PLAY</div><h2>AIM AND DESTROY</h2>'+
- '<p><b>1.</b> Hold your finger or mouse button and slide left/right: your fighter fires while held.<br><b>2.</b> On keyboard use A/D and hold Space to shoot.<br><b>3.</b> Tap the FIRE MODE panel or press 1/2/3 to switch between WIDE, FOCUS and PIERCE.<br><b>4.</b> Upgrade weapons automatically as you score actual hits. No upgrade popups.<br><b>5.</b> Press Q or tap the glowing special button when fully charged. Protect the airfield from waves and bosses. Pause only by holding the pause button for 0.7 seconds (or Esc/P).</p>'+
+ '<p><b>1.</b> Hold your finger or mouse button and slide left/right: your fighter fires while held.<br><b>2.</b> On keyboard use A/D and hold Space to shoot.<br><b>3.</b> Your cannon always shoots one straight stream; upgrades improve speed, impact and penetration.<br><b>4.</b> Upgrade weapons automatically as you score actual hits. No upgrade popups.<br><b>5.</b> Press Q or tap the glowing special button when fully charged. Protect the airfield from waves and bosses. Pause only by holding the pause button for 0.7 seconds (or Esc/P).</p>'+
  '<div class="panelFooter"><button class="btnMain" data-action="start">▶ START SHOOTING</button><button class="btnAlt" data-action="menu">BACK</button></div>')}
 function reset(){
  g.scene='play';g.elapsed=0;g.wave=1;g.base=100;g.fireMode=0;g.kills=0;g.score=0;g.combo=0;g.bestCombo=0;g.lastKO=-99;g.charge=0;g.specials=0;g.shotCount=0;g.hitCount=0;
- g.level=1;g.nextUpgrade=450;g.upgrades={};g.upgradeChoices=[];g.enemyPool=[];g.bullets=[];g.particles=[];g.rings=[];g.texts=[];g.beams=[];g.boss=null;g.bossesDefeated=0;g.spawnTimer=.2;g.spawned=0;g.leaked=0;g.spawnSeed=0;g.formation=0;g.shake=0;g.flash=0;g.freeze=0;g.superFlash=0;g.musicTime=0;
+ g.level=1;g.nextUpgrade=450;g.upgrades={};g.upgradeChoices=[];g.enemyPool=[];g.bullets=[];g.particles=[];g.rings=[];g.texts=[];g.beams=[];g.boss=null;g.bossesDefeated=0;g.spawnTimer=.03;g.spawned=0;g.leaked=0;g.spawnSeed=0;g.formation=0;g.firstSwarm=true;g.totalFront=0;g.shake=0;g.flash=0;g.freeze=0;g.superFlash=0;g.musicTime=0;
  g.shipX=g.W*.5;g.shipY=g.H-87;g.aimX=g.W*.5;g.aimY=g.H*.3;g.pointer=null;g.fireKey=false;g.fireDelay=0;g.keys.clear();
  $('overlay').classList.add('hidden');$('app').dataset.scene='play';Audio?.start(0,true);window.PALCrazy?.gameStart();hud(true);toast('HOLD TO FIRE — DEFEND THE AIRFIELD!',g.W/2,g.H*.4,'#fff4bf',1.3);
 }
@@ -70,7 +69,7 @@ function finish(victory){
 function levelUp(){
   // Never stop the action to show an upgrade modal.
   g.level++;
-  const sequence=['fan','rate','pierce','blast','power','rate','fan','focus','blast','beam','wall','power','pierce','fan'];
+  const sequence=['power','rate','pierce','blast','focus','rate','power','pierce','blast','beam','wall','power','pierce','rate'];
   const wanted=sequence[(g.level-2)%sequence.length];
   let u=UPGRADES.find(x=>x.id===wanted&&owned(x.id)<x.max);
   if(!u)u=UPGRADES.find(x=>owned(x.id)<x.max);
@@ -100,38 +99,50 @@ function summonBoss(){
  toast('⚠ ENEMY ACE BOMBER!',g.W/2,g.H*.25,'#fff5a1',1.6);
  snd('boss');g.shake=8;
 }
+// Actual enemies, 10x V6 (previous cap 550 phone / 930 desktop).
+// Start with an authentic visible screenful; subsequent troops enter from TOP.
+const SWARM_MOBILE_CAP=5500,SWARM_DESKTOP_CAP=9300;
+function enemyCap(){return g.W<480?SWARM_MOBILE_CAP:SWARM_DESKTOP_CAP}
 function spawnGroup(){
- const w=g.W,stage=g.wave,cap=w<480?550:930;
+ const w=g.W,cap=enemyCap();
  if(g.enemyPool.length>=cap)return;
- const laneCount=w<500?5:9;
- g.formation=(g.formation+1)%7;
- const offset=g.formation%laneCount;
- const n=min(cap-g.enemyPool.length,Math.round(29+stage*6+Math.random()*12));
- for(let i=0;i<n;i++){
-  const lane=((offset+i*7+Math.floor(i/4))%laneCount);
-  const width=w/laneCount;
-  const clusterX=width*(lane+.5);
-  const x=clamp(clusterX+rand(-width*.36,width*.36),10,w-10);
-  const y=-rand(12,150)-(i%5)*13;
-  const type=Math.random()<.09&&stage>1?'armor':Math.random()<.15?'volatile':Math.random()<.17&&stage>2?'zig':'glimmer';
-  const hp=type==='armor'?4+stage:type==='zig'?2:1;
-  g.enemyPool.push({x,y,r:type==='armor'?16.5:rand(9.0,12.7),hp,maxHp:hp,type,vy:rand(80,130)+stage*6,age:0,sway:rand(0,TAU),color:COLORS[Math.floor(rand(0,COLORS.length))],dead:false});
-  g.spawned++;
+ const first=g.firstSwarm;g.firstSwarm=false;
+ const target=first?cap:Math.min(560,cap-g.enemyPool.length);
+ const number=Math.min(target,cap-g.enemyPool.length);
+ const lanes=w<480?30:Math.floor(w/13);
+ for(let i=0;i<number;i++){
+  const lane=(i*17+g.spawnSeed*23)%lanes;
+  const x=clamp((lane+.25+Math.random()*.5)*(w/lanes),6,w-6);
+  // First formation blankets the *visible playfield*; later waves fly from above.
+  const y=first?rand(76,g.shipY-82):rand(-135,65);
+  const xref=Math.random();
+  const type=xref<.065&&g.wave>1?'armor':xref<.2?'volatile':xref<.29&&g.wave>2?'zig':'glimmer';
+  const leading=(i%31===0);
+  const e={
+   x,y,r:leading?rand(7.7,10.4):rand(2.7,4.3),
+   hp:type==='armor'?2+g.wave:1,maxHp:type==='armor'?2+g.wave:1,
+   type,vy:rand(66,99)+g.wave*5,
+   age:rand(0,6.3),sway:rand(0,TAU),variant:i%COLORS.length,
+   dead:false
+  };
+  e.color=COLORS[e.variant];
+  g.enemyPool.push(e);g.spawned++;
  }
+ g.spawnSeed++;
 }
-function leak(n=1){g.leaked+=n;g.combo=0;const threshold=340+owned('wall')*95;if(g.leaked%threshold< n){g.base=max(0,g.base-1);g.flash=.13;g.shake=3;snd('hurt')}}
+function leak(n=1){g.leaked+=n;g.combo=0;const threshold=2600+owned('wall')*520;if(g.leaked%threshold< n){g.base=max(0,g.base-1);g.flash=.13;g.shake=3;snd('hurt')}}
 function breakEnemy(e,big=false,fromBlast=false){
  if(e.dead)return;
  e.dead=true;g.kills++;g.score+=Math.floor((e.type==='armor'?11:2)*(1+Math.min(8,g.combo/70)));
  g.combo=g.elapsed-g.lastKO<1.8?g.combo+1:1;g.lastKO=g.elapsed;g.bestCombo=max(g.bestCombo,g.combo);
- g.charge=clamp(g.charge+(e.type==='armor'?1.15:.19)*(1+owned('beam')*.2),0,100);
+ g.charge=clamp(g.charge+(e.type==='armor'?.18:.016)*(1+owned('beam')*.2),0,100);
  if(g.kills%80===0){toast('+'+g.combo+' COMBO!',g.W*.5,g.H*.43,'#ffecae',.48);snd('combo')}
  if(g.kills>0&&g.kills%1000===0){toast('✦ '+(g.kills/1000)+'K TRUE KOs! ✦',g.W*.5,g.H*.35,'#ffe49d',1.1);g.shake=8}
- if(big||Math.random()<.1){for(let j=0;j<4;j++)addPart(e.x,e.y,rand(-130,130),rand(-140,130),ACCENTS[(j+g.kills)%ACCENTS.length],rand(2,5),rand(.2,.48))}
- if(g.kills%11===0)snd('horde',1.3);
- if(e.type==='volatile'&&!fromBlast)explode(e.x,e.y,48+owned('blast')*10,1+owned('power'),2);
+ if((big&&g.kills%16===0)||g.kills%39===0){for(let j=0;j<2;j++)addPart(e.x,e.y,rand(-130,130),rand(-140,130),ACCENTS[(j+g.kills)%ACCENTS.length],rand(2,4),rand(.2,.36))}
+ if(g.kills%70===0)snd('horde',1.2);
+ if(e.type==='volatile'&&!fromBlast&&g.kills%7===0)explode(e.x,e.y,28+owned('blast')*7,1+owned('power'),2);
 }
-const GRID=48;
+const GRID=28;
 const enemyGrid=new Map();
 let gridEpoch=0;
 const key=(ix,iy)=>ix+iy*2048;
@@ -171,32 +182,19 @@ function explode(x,y,r,damage,depth=0){
  });
  return hits;
 }
-function chooseMode(mode){
- if(g.scene!=='play')return;
- g.fireMode=(mode+3)%3;
- const names=['WIDE','FOCUS','PIERCE'];
- toast('FIRE MODE: '+names[g.fireMode],g.W*.5,g.H*.32,'#fff2b4',.7);
- snd('click');
-}
+function chooseMode(){ /* Single fixed straight-ahead shot; no spread modes. */ }
 function shoot(){
  if(g.scene!=='play')return;
- const baseFan=1+owned('fan')*2;
- const mode=g.fireMode;
- const fan=mode===0?baseFan+4:mode===1?max(1,baseFan-2):max(3,baseFan);
- const pierce=(mode===2?17:mode===1?10:11)+owned('pierce')*5;
- const damage=(mode===1?3:1)+Math.floor(owned('power')*.7);
- for(let i=0;i<fan;i++){
-   const spread=fan===1?0:(i-(fan-1)/2)*(mode===0?.115:mode===2?.038:.017);
-   const theta=-Math.PI/2+spread;
-   const r=(mode===1?10:7.5)+owned('focus')*1.3;
-   g.bullets.push({x:g.shipX,y:g.shipY-32,vx:Math.cos(theta)*965,vy:Math.sin(theta)*965,
-       r,damage,pierce,age:0,life:1.35,
-       color:['#ffe5a2','#b8f5eb','#ffd6a5'][mode],seen:new Set(),explosive:owned('blast')});
- }
- if(g.bullets.length>135)g.bullets.splice(0,g.bullets.length-135);
- g.shotCount++;g.fireDelay=max(.052,(mode===1?.116:.083)*Math.pow(.87,owned('rate')));
- for(let i=0;i<4;i++)addPart(g.shipX,g.shipY-32,rand(-26,26),rand(-140,-60),'#ffe9ae',rand(2,4),.18);
- snd('cannon');g.shake=max(g.shake,.6);
+ const pierce=48+owned('pierce')*18;
+ const damage=1+Math.floor(owned('power')*.55);
+ const radius=6.5+owned('focus')*1.65;
+ g.bullets.push({x:g.shipX,y:g.shipY-36,vx:0,vy:-1120,
+  r:radius,damage,pierce,age:0,life:1.55,
+  color:'#fff0b8',seen:new Set(),explosive:owned('blast')});
+ if(g.bullets.length>115)g.bullets.splice(0,g.bullets.length-115);
+ g.shotCount++;g.fireDelay=Math.max(.047,.072*Math.pow(.9,owned('rate')));
+ if(g.shotCount%4===0)addPart(g.shipX,g.shipY-37,0,-95,'#ffe3a3',3,.12);
+ snd('cannon');g.shake=max(g.shake,.45);
 }
 function special(){
  if(g.scene!=='play'||g.charge<100)return false;
@@ -242,7 +240,7 @@ function collisionShots(dt){
    b.seen.add(e);e.hp-=b.damage;b.pierce--;g.hitCount++;
    if(e.hp<=0)breakEnemy(e);
    // Shot-triggered blast can mow down a full formation; no idle kills.
-   explode(e.x,e.y,29+b.explosive*11,b.damage,1);
+   explode(e.x,e.y,20+b.explosive*8,b.damage,1);
    if(b.pierce<=0)return false;
   });
  }
@@ -263,13 +261,12 @@ function tick(dt){
  g.fireDelay-=dt;
  if((g.pointer?.down||g.fireKey)&&g.fireDelay<=0)shoot();
  g.spawnTimer-=dt;
- if(g.spawnTimer<=0){spawnGroup();g.spawnTimer=clamp(.18-g.wave*.015,.095,.166)}
+ if(g.spawnTimer<=0){spawnGroup();g.spawnTimer=.105}
  if((g.elapsed>=72&&g.bossesDefeated===0&&!g.boss)||(g.elapsed>=140&&g.bossesDefeated===1&&!g.boss)||(g.elapsed>=182&&g.bossesDefeated===2&&!g.boss))summonBoss();
  for(let i=g.enemyPool.length-1;i>=0;i--){
   const e=g.enemyPool[i];if(e.dead){g.enemyPool[i]=g.enemyPool[g.enemyPool.length-1];g.enemyPool.pop();continue}
   e.age+=dt;e.y+=e.vy*dt;
-  if(e.type==='zig')e.x+=Math.sin(e.age*5+e.sway)*65*dt;
-  else e.x+=Math.sin(e.age*1.5+e.sway)*6*dt;
+  if(e.type==='zig')e.x+=((g.frameCount%4<2)?1:-1)*24*dt;
   e.x=clamp(e.x,5,g.W-5);
   if(e.y>=g.shipY+13){g.enemyPool[i]=g.enemyPool[g.enemyPool.length-1];g.enemyPool.pop();leak()}
  }
@@ -292,7 +289,7 @@ function hud(force=false){
  $('combo').textContent='x'+clamp(1+g.combo/120,1,99).toFixed(1);
  const t=max(0,g.duration-g.elapsed);$('clock').textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(Math.ceil(t%60)).padStart(2,'0');
  $('status').textContent=g.scene==='play'?(g.boss?'★ SHOOT THE ACE BOMBER!':'✦ '+WAVES[g.wave-1]+' · HOLD TO FIRE'):'HOLD TO FIRE • AIM AT THE SWARM';
- $('weaponLevel').textContent='LV '+g.level+' · '+['WIDE','FOCUS','PIERCE'][g.fireMode];
+ $('weaponLevel').textContent='LV '+g.level+' · STRAIGHT';
  $('superFill').style.width=Math.floor(g.charge)+'%';$('superText').textContent=Math.floor(g.charge)+'%';$('superReady').textContent=g.charge>=100?'READY!':'CHARGE';
  $('superBtn').classList.toggle('ready',g.charge>=100);$('superBtn').setAttribute('aria-disabled',String(g.charge<100));
  $('bossHUD').hidden=!g.boss;if(g.boss){$('bossLabel').textContent='ACE BOMBER '+g.bossesDefeated+'/3';$('bossFill').style.width=clamp(g.boss.hp/g.boss.maxHp*100,0,100)+'%'}
@@ -429,14 +426,22 @@ function buildEnemySprite(kind,variant){
 }
 function drawEnemy(e){
  if(e.y<-32||e.y>g.H+34)return;
- const variant=max(0,COLORS.indexOf(e.color)),kind=e.type;
+ const variant=e.variant??max(0,COLORS.indexOf(e.color)),kind=e.type;
  const k=kind+variant;let sprite=spriteBank.get(k);
  if(!sprite){sprite=buildEnemySprite(kind,variant);spriteBank.set(k,sprite)}
- const size=e.r*(kind==='armor'?3.8:3.35);
+ const size=e.r*(kind==='armor'?3.15:2.75);
  if(kind==='zig'){
   ctx.save();ctx.translate(e.x,e.y);ctx.rotate(Math.sin(e.age*5+e.sway)*.14);
   ctx.drawImage(sprite,-size*.5,-size*.5,size,size);ctx.restore()
  }else ctx.drawImage(sprite,e.x-size*.5,e.y-size*.5,size,size);
+ g.renderedEnemies++;
+}
+function drawHordeEnemy(hc,e){
+ const variant=e.variant??0,kind=e.type,k=kind+variant;
+ let sprite=spriteBank.get(k);
+ if(!sprite){sprite=buildEnemySprite(kind,variant);spriteBank.set(k,sprite)}
+ const size=e.r*(kind==='armor'?3.15:2.75);
+ hc.drawImage(sprite,e.x-size*.5,e.y-size*.5,size,size);
  g.renderedEnemies++;
 }
 function drawBoss(b,t){
@@ -488,7 +493,9 @@ function ship(t){
 }
 const terrainCache=document.createElement('canvas');
 const terrainContext=terrainCache.getContext('2d',{alpha:false});
-let lastTerrainFrame=-100;
+const hordeLayer=document.createElement('canvas');
+const hordeContext=hordeLayer.getContext('2d',{alpha:true});
+let lastTerrainFrame=-100,lastHordeFrame=-100;
 function draw(t){
  ctx.setTransform(g.dpr,0,0,g.dpr,0,0);
  const W=g.W,H=g.H;
@@ -501,7 +508,25 @@ function draw(t){
   lastTerrainFrame=g.frameCount;
  }
  ctx.drawImage(terrainCache,0,0,W,H);
- g.renderedEnemies=0;
+ // Every other frame repaint all 5k–9k foes; 60Hz controls, bullets and pilot remain live.
+ const hordeScale=W<480?.75:.85;
+ const hw=Math.max(1,Math.ceil(W*hordeScale)),hh=Math.max(1,Math.ceil(H*hordeScale));
+ if(hordeLayer.width!==hw||hordeLayer.height!==hh){
+  hordeLayer.width=hw;hordeLayer.height=hh;lastHordeFrame=-100;
+ }
+ if(g.frameCount-lastHordeFrame>=2){
+  hordeContext.setTransform(1,0,0,1,0,0);
+  hordeContext.clearRect(0,0,hw,hh);
+  hordeContext.setTransform(hordeScale,0,0,hordeScale,0,0);
+  g.renderedEnemies=0;
+  // keep original logical world coordinates under scaled offscreen rendering.
+  for(const e of g.enemyPool){
+   if(e.dead||e.y<-24||e.y>H+23)continue;
+   drawHordeEnemy(hordeContext,e);
+  }
+  lastHordeFrame=g.frameCount;
+ }
+ ctx.drawImage(hordeLayer,0,0,W,H);
  ctx.save();
  if(g.shake>0)ctx.translate(Math.sin(t*.11)*g.shake*.55,Math.cos(t*.13)*g.shake*.55);
  // Subtle perspective shadow and boundary at the defended airfield.
@@ -510,7 +535,6 @@ function draw(t){
  ctx.fillStyle=grass;ctx.fillRect(0,g.shipY+36,W,H-g.shipY+5);
  ctx.strokeStyle='#f4e8b4b8';ctx.lineWidth=3;ctx.setLineDash([16,9]);
  ctx.beginPath();ctx.moveTo(0,g.shipY+38);ctx.lineTo(W,g.shipY+38);ctx.stroke();ctx.setLineDash([]);
- for(const e of g.enemyPool)if(e.y>-35&&e.y<H+25)drawEnemy(e);
  if(g.boss)drawBoss(g.boss,t);
  // Each warm muzzle trail is a player-triggered cannon round.
  ctx.lineCap='round';
@@ -559,7 +583,7 @@ for(const ev of ['pointerup','pointercancel','pointerleave']){
 }
 pauseButton.addEventListener('click',e=>e.preventDefault());
 $('superBtn').addEventListener('click',()=>{Audio?.unlock();special()});
-$('ammoLabel').addEventListener('click',()=>chooseMode(g.fireMode+1));
+// No fire-mode switch: user requested exactly ONE straight cannon.
 const pointerX=clientX=>{
  const r=canvas.getBoundingClientRect();
  return clamp(clientX-r.left,24,g.W-24);
@@ -643,8 +667,7 @@ window.addEventListener('keydown',e=>{
  if(g.scene==='play'){
   if(e.code==='Space'||e.code==='KeyJ'){if(!g.fireKey){Audio?.unlock();g.fireDelay=0;shoot()}g.fireKey=true}
   if(e.code==='KeyQ'&&!e.repeat){Audio?.unlock();special()}
-  if(['Digit1','Digit2','Digit3'].includes(e.code)&&!e.repeat)chooseMode(Number(e.code.at(-1))-1);
-  if(e.code==='KeyM'&&!e.repeat)chooseMode(g.fireMode+1);
+  // All inputs use the same single straight stream.
   if(e.code==='Escape'||e.code==='KeyP')pause();
  }else if(g.scene==='upgrade'&&/^Digit[123]$/.test(e.code))selectUpgrade(Number(e.code.at(-1))-1);
  else if(g.scene==='menu'&&e.code==='Enter')reset();
@@ -654,14 +677,14 @@ window.addEventListener('keyup',e=>{g.keys.delete(e.code);if(e.code==='Space'||e
 let last=0,lastHud=0;function frame(now){const dt=last?min(.045,(now-last)/1000):1/60;last=now;g.now=now;g.fps=Math.round(g.fps*.95+.05/dt);g.frameDt=dt;g.frameCount++;tick(dt);draw(now);if(now-lastHud>95){hud();lastHud=now}requestAnimationFrame(frame)}
 if(new URLSearchParams(location.search).get('qa')==='1'){
  window.LumiQA={
-  snapshot:()=>({scene:g.scene,fireMode:g.fireMode,time:g.elapsed,wave:g.wave,base:g.base,kills:g.kills,score:g.score,combo:g.combo,shots:g.shotCount,hits:g.hitCount,spawned:g.spawned,leaked:g.leaked,enemies:g.enemyPool.length,renderedEnemies:g.renderedEnemies,spatialBuckets:enemyGrid.size,level:g.level,super:g.charge,boss:!!g.boss,bosses:g.bossesDefeated,shipX:g.shipX,shipY:g.shipY,weapon:{...g.upgrades},music:Audio?.status(),fps:g.fps}),
+  snapshot:()=>({scene:g.scene,fireMode:g.fireMode,time:g.elapsed,wave:g.wave,base:g.base,kills:g.kills,score:g.score,combo:g.combo,shots:g.shotCount,hits:g.hitCount,bulletCount:g.bullets.length,bulletVXMax:g.bullets.reduce((a,b)=>Math.max(a,Math.abs(b.vx)),0),spawned:g.spawned,leaked:g.leaked,enemies:g.enemyPool.length,enemyCap:enemyCap(),renderedEnemies:g.renderedEnemies,spatialBuckets:enemyGrid.size,level:g.level,super:g.charge,boss:!!g.boss,bosses:g.bossesDefeated,shipX:g.shipX,shipY:g.shipY,weapon:{...g.upgrades},music:Audio?.status(),fps:g.fps}),
   start:()=>reset(),tick:(sec=1)=>{for(let t=0;t<sec;t+=.04){tick(.04);if(g.scene!=='play')break}},
   setBase:(n=100000)=>{g.base=n;g.baseMax=n},
   manualFire:(x=g.W/2,y=170)=>{g.aimX=x;g.aimY=y;g.shipX=clamp(x,24,g.W-24);shoot()},
   holdFire:(on=true)=>{g.fireKey=on;g.fireDelay=0},holdPointer:(x,y,on=true)=>{g.pointer=on?{x,y:clamp(y,100,g.shipY-55),down:true,id:999}:null;g.fireDelay=0},
   summonBoss:()=>summonBoss(),setCharge:(n=100)=>{g.charge=n},special:()=>special(),upgrade:(i=0)=>selectUpgrade(i),
   addEnemies:(n=400)=>{for(let i=0;i<n;i++){const x=clamp(g.W*.5+rand(-110,110),12,g.W-12);g.enemyPool.push({x,y:rand(112,260),r:rand(4,7),hp:1,maxHp:1,type:'glimmer',vy:90,age:0,sway:rand(0,7),color:COLORS[i%COLORS.length],dead:false});g.spawned++}},
-  forceUpgrade:()=>levelUp(),mode:(i)=>chooseMode(i),win:()=>{g.boss=null;g.bossesDefeated=3;g.elapsed=g.duration;finish(true)},lose:()=>{g.base=0;finish(false)},
+  forceUpgrade:()=>levelUp(),mode:()=>chooseMode(),win:()=>{g.boss=null;g.bossesDefeated=3;g.elapsed=g.duration;finish(true)},lose:()=>{g.base=0;finish(false)},
   resize:()=>dimension(),audio:()=>Audio?.status(),getDimension:()=>({W:g.W,H:g.H}),render:()=>draw(performance.now())
  };
 }

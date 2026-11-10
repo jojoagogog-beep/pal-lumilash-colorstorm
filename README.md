@@ -34,3 +34,11 @@ Static HTML5 application with CrazyGames SDK v3 bridge. Previous versions are ar
 - Dedicated mobile touchstart/touchmove (global)/touchend with preventDefault and a brief touchcancel recovery; window mouse drag continues beyond the canvas. Full-size touch controls do not cause scrolling.
 - Faster uninterrupted manually held bullet output, three attack modes, no passive shots, automatic nonblocking upgrades, explicit pause only, more tolerant airfield survival.
 - QA must check true input holding across the screen, no unsolicited pause, real continuous fire, high density, no errors, and representative performance.
+
+## V7: Tenfold Horde, Single Straight Cannon
+- Real enemy pool target: 5,500 simultaneous foes on compact/mobile screens; 9,300 on wider desktop screens (10× V6 caps of 550/930).
+- From the initial frame, an entire visible-field army advances downward. Subsequent troops arrive from above. Individual enemy hits are counted, not fake multiplier values.
+- Exactly one bullet per trigger event, with **zero horizontal velocity**, including after level-up. No fan or spread mode, no mode-switch controls. Progression upgrades this single stream's power, rate, width, penetration and shot-triggered splash.
+- Lightweight small aircraft variant sprites, separate half-rate antialiased enemy layer, cached terrain, spatial-hashed bullet collision, bounded trails and FX protect continuous 60Hz touch tracking.
+- Increased breach tolerance proportional to tenfold physical population.
+- Emulated-device tests validate actual population near caps, one-line firing, multi-second continuous drag, no spontaneous pauses, release-to-stop and game performance.
