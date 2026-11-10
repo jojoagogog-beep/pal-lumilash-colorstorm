@@ -86,8 +86,8 @@ function blastRing(x,y,r,c){g.rings.push({x,y,r,age:0,life:.40,color:c});if(g.ri
 function toast(str,x,y,color='#fff',life=.65){if(g.texts.length>16)g.texts.shift();g.texts.push({str,x,y,color,life,age:0})}
 function summonBoss(){
  if(g.boss||g.scene!=='play')return;
- const hp=250+g.wave*120;
- g.boss={x:g.W/2,y:-95,w:135+g.wave*12,hp,maxHp:hp,vy:13,alive:true,phase:rand(0,TAU)};
+ const hp=170+g.wave*58;
+ g.boss={x:g.W/2,y:-95,w:135+g.wave*12,hp,maxHp:hp,vy:18,alive:true,phase:rand(0,TAU)};
  toast('⚠ COLOSSAL COLOR BOSS!',g.W/2,g.H*.25,'#fff5a1',1.6);
  snd('boss');g.shake=8;
 }
@@ -110,7 +110,7 @@ function spawnGroup(){
   g.spawned++;
  }
 }
-function leak(n=1){g.leaked+=n;g.combo=0;const threshold=18+owned('wall')*5;if(g.leaked%threshold< n){g.base=max(0,g.base-1);g.flash=.13;g.shake=3;snd('hurt')}}
+function leak(n=1){g.leaked+=n;g.combo=0;const threshold=48+owned('wall')*14;if(g.leaked%threshold< n){g.base=max(0,g.base-1);g.flash=.13;g.shake=3;snd('hurt')}}
 function breakEnemy(e,big=false,fromBlast=false){
  if(e.dead)return;
  e.dead=true;g.kills++;g.score+=Math.floor((e.type==='armor'?11:2)*(1+Math.min(8,g.combo/70)));
@@ -171,7 +171,7 @@ function collisionShots(dt){
   if(b.x< -25||b.x>g.W+25||b.y< -40||b.age>b.life||b.pierce<=0){g.bullets.splice(i,1);continue}
   if(g.boss){
    const bb=g.boss,dx=b.x-bb.x,dy=b.y-bb.y;
-   if(abs(dx)<bb.w*.5+6&&abs(dy)<48){bb.hp-=b.damage*2.1;b.pierce=0;g.hitCount++;blastRing(b.x,b.y,20,'#fff1a9');bossCheck();continue}
+   if(abs(dx)<bb.w*.5+6&&abs(dy)<48){bb.hp-=b.damage*6.5;b.pierce=0;g.hitCount++;blastRing(b.x,b.y,20,'#fff1a9');bossCheck();continue}
   }
   for(const e of g.enemyPool){
    if(e.dead||b.seen.has(e))continue;
