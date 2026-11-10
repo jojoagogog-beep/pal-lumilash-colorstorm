@@ -25,3 +25,12 @@ Original polished classic vertical-scrolling propeller-aircraft shooter; NOT a s
 
 ## Publication protocol
 Static HTML5 application with CrazyGames SDK v3 bridge. Previous versions are archived. The new V5 browser release and matching gameplay cover/trailers are the next submission candidate after FRUITY NET. Preparation is not formal submission or approval.
+
+## V6 Unstoppable Assault (2026-11-11)
+- New sinister (dark aircraft/red-glowing eyes) air enemies, including spiked zig jets and armored bombers, built as original antialiased vector sprites cached to Canvas offscreens.
+- Enemy bands fill all horizontal lanes in thick continuous formations, with 440 mobile / 820 wider active population caps.
+- Per-frame collision code is now a 48px spatial hash grid with swept bullet collision and localized chain explosions, replacing O(shots × all enemies) iteration. Render sprites are reusable images rather than hundreds of per-frame path rebuilds.
+- Terrain is cached and repainted every third frame, while the aircraft, controls and shots update each frame.
+- Dedicated mobile touchstart/touchmove (global)/touchend with preventDefault and a brief touchcancel recovery; window mouse drag continues beyond the canvas. Full-size touch controls do not cause scrolling.
+- Faster uninterrupted manually held bullet output, three attack modes, no passive shots, automatic nonblocking upgrades, explicit pause only, more tolerant airfield survival.
+- QA must check true input holding across the screen, no unsolicited pause, real continuous fire, high density, no errors, and representative performance.

@@ -37,3 +37,19 @@ body{background:#6b997a}
 .upgrade{background:linear-gradient(145deg,#496b52,#617047);border-color:#fff2bf65}
 #bottomHUD{z-index:5}
 @media(max-width:650px){#ammoLabel{font-size:8px;min-width:125px}}
+
+/* V6: keep the super button away from the player's lower flight rail.
+   A finger may travel across the complete canvas without crossing a control. */
+#superBtn{top:112px;bottom:auto;right:13px;width:83px;height:83px}
+#energy{margin-right:0}
+#ammoLabel{touch-action:manipulation}
+#arena{-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:contain}
+@media(max-width:650px){
+ #superBtn{top:max(108px,calc(env(safe-area-inset-top) + 98px));bottom:auto;right:9px;width:68px;height:68px}
+ #superBtn>b{font-size:16px}
+ #superBtn span{font-size:7px}
+ #superBtn small{font-size:7px}
+ #energy{margin-right:0}
+ #bottomHUD{right:8px}
+ #energy .progress{min-width:42px}
+}
